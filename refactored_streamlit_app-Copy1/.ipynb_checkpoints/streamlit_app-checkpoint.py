@@ -3,22 +3,45 @@ import logging
 import os
 import traceback
 import warnings
+from pathlib import Path
+import base64
 
 import numpy as np
 import streamlit as st
 
+# ✅ 1. 导入我们刚刚拆分出去的仪表盘模块
 from app.core import ConcreteMixProblem, MetricsCalculator, ModelWrapper
 from app.dashboard import show_results
 from app.paths import get_logo_path, get_model_path
 from app.ui_helpers import (
-    get_base64_img,
-    get_font_scale_config,
+    apply_page_style,
     init_session_state,
     range_slider_with_inputs,
     reset_run_results,
     set_time,
     slider_with_input,
 )
+
+# 1. 统一获取基础目录（脚本所在的文件夹）
+
+# 2. 定义图片路径，逻辑与 model_path 完全一致
+
+logo_path = get_logo_path()
+
+
+def get_base64_img(path):
+    # 检查图片是否存在，逻辑与 if not os.path.exists(model_path) 一致
+    if not path.exists():
+        return None
+    try:
+        with open(path, "rb") as f:
+            data = f.read()
+        return base64.b64encode(data).decode()
+    except Exception:
+        return None
+
+# 3. 提取图片 Base64
+img_base64 = get_base64_img(logo_path)
 
 # Suppress TF logs
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
@@ -78,18 +101,14 @@ FIXED_GYPSUM = 4.0
 FIXED_TEMP = 25.0
 TOTAL_BINDER_TARGET = 100.0 - FIXED_GYPSUM
 
-init_session_state()
-font_config = get_font_scale_config(st.session_state.get("font_size_preset", "Standard"))
-img_base64 = get_base64_img(get_logo_path())
-
-note_html = f"""
-<ul style="margin:10px 0 0 18px; padding:0; font-size:{font_config['header_note']}; color:#334155; line-height:1.45;">
+note_html = """
+<ul style="margin:10px 0 0 18px; padding:0; font-size:0.78rem; color:#334155; line-height:1.45;">
 <li>
   <b>ANN Model outputs:</b> E-modulus (GPa) + max CO₂ uptake (kg/kg). The E-modulus is derived by applying 
   <b>micromechanical homogenization</b> to the <b>GEMS-simulated hydrate assemblages</b>.
   <details style="display:inline; cursor:pointer; color:#0F766E;">
-    <summary style="list-style:none; display:inline; font-size:{font_config['header_ref']}; text-decoration:underline;">[Ref]</summary>
-    <div style="font-size:{font_config['header_ref']}; color:#64748B; background:#F8FAFC; padding:10px; border-left:2px solid #0F766E; margin-top:5px; line-height:1.3;">
+    <summary style="list-style:none; display:inline; font-size:0.7rem; text-decoration:underline;">[Ref]</summary>
+    <div style="font-size:0.7rem; color:#64748B; background:#F8FAFC; padding:10px; border-left:2px solid #0F766E; margin-top:5px; line-height:1.3;">
       <b>Citations:</b><br>
       1. Kulik D.A., et al. (2013): GEM-Selektor geochemical modeling package. Comput. Geosci. 17, 1-24.<br>
       2. Wagner T., et al. (2012): GEM-Selektor package: TSolMod library. Can. Mineral. 50, 1173-1195.<br>
@@ -130,20 +149,14 @@ st.markdown(f"""
     }}
 
     p, .stMarkdown, .stText, label, .stSelectbox, .stNumberInput, div[data-baseweb="select"] {{
-        font-size: {font_config['body']} !important;
+        font-size: 16px !important;
         line-height: 1.5 !important;
     }}
-
-    div[data-testid="stCaptionContainer"] p,
-    div[data-testid="stRadio"] p,
-    div[data-testid="stCheckbox"] label p {{
-        font-size: {font_config['small']} !important;
-    }}
     
-    h1 {{ font-size: {font_config['h1']} !important; font-weight: 800 !important; }}
-    h2 {{ font-size: {font_config['h2']} !important; font-weight: 700 !important; }}
-    h3 {{ font-size: {font_config['h3']} !important; font-weight: 700 !important; }}
-    h4, h5 {{ font-size: {font_config['h4']} !important; font-weight: 600 !important; }}
+    h1 {{ font-size: 2.2rem !important; font-weight: 800 !important; }}
+    h2 {{ font-size: 1.8rem !important; font-weight: 700 !important; }}
+    h3 {{ font-size: 1.4rem !important; font-weight: 700 !important; }}
+    h4, h5 {{ font-size: 1.2rem !important; font-weight: 600 !important; }}
 
     .css-card {{
         background-color: {COLORS['bg_card']};
@@ -155,7 +168,7 @@ st.markdown(f"""
     }}
 
     .stButton > button {{
-        font-size: {font_config['button']} !important;
+        font-size: 16px !important;
         padding: 0.6rem 1.2rem !important;
         font-weight: 600 !important;
         background: {COLORS['primary']} !important;
@@ -172,7 +185,7 @@ st.markdown(f"""
     /* Slider Adjustments */
     div.stSlider {{ padding-top: 10px; }}
     div.stSlider div[data-testid="stMarkdownContainer"] p {{
-        font-size: {font_config['slider_label']} !important;
+        font-size: 15px !important;
         color: {COLORS['text_sub']} !important;
         font-weight: 600 !important;
     }}
@@ -192,7 +205,7 @@ st.markdown(f"""
 
     /* Tabs */
     .stTabs [data-baseweb="tab"] {{
-        font-size: {font_config['tab']} !important;
+        font-size: 16px !important;
         padding: 10px 24px !important;
         color: {COLORS['text_sub']};
     }}
@@ -201,13 +214,8 @@ st.markdown(f"""
         border-bottom-color: {COLORS['primary']} !important;
     }}
 
-    div[data-testid="stMetricLabel"] {{ font-size: {font_config['metric_label']} !important; color: {COLORS['text_sub']}; }}
-    div[data-testid="stMetricValue"] {{ font-size: {font_config['metric_value']} !important; font-weight: 700 !important; color: {COLORS['text_head']}; }}
-
-    div[data-testid="stDataFrame"] [role="columnheader"],
-    div[data-testid="stDataFrame"] [role="gridcell"] {{
-        font-size: {font_config['body']} !important;
-    }}
+    div[data-testid="stMetricLabel"] {{ font-size: 14px !important; color: {COLORS['text_sub']}; }}
+    div[data-testid="stMetricValue"] {{ font-size: 24px !important; font-weight: 700 !important; color: {COLORS['text_head']}; }}
 
     .main-header {{
         background: white;
@@ -393,7 +401,7 @@ logo_html = '<img src="data:image/png;base64,{}" style="height: 85px;">'.format(
 
 meta_html = (
 '<div style="margin-top:12px;padding-top:12px;border-top:1px solid #E2E8F0;'
-f'color:#334155;font-size:{font_config["header_meta"]};line-height:1.35;">'
+'color:#334155;font-size:0.82rem;line-height:1.35;">'
 '<div style="margin-bottom:8px;">🏢 <b>Developed by:</b> '
 '<a href="https://www.psi.ch/en/les" target="_blank" '
 'style="color:#0F172A;font-weight:700;text-decoration:none;">PSI - LES Team</a> '
@@ -426,10 +434,10 @@ f'<div style="display:flex;align-items:center;">{logo_html}</div>'
 f'{meta_html}'
 f'</div>'
 f'<div style="flex:1;border-left:2px solid #E2E8F0;padding-left:20px;">'
-f'<h1 style="margin:0;font-size:{font_config["header_title"]};color:#0F172A;">'
-f'Cement Mix Optimizer <span style="font-size:{font_config["header_version"]}; font-weight:700; color:#64748B;">v0.1.2026</span>'
+f'<h1 style="margin:0;font-size:1.8rem;color:#0F172A;">'
+f'Cement Mix Optimizer <span style="font-size:0.95rem; font-weight:700; color:#64748B;">v0.1.2026</span>'
 f'</h1>'
-f'<p style="margin:6px 0 0 0;font-size:{font_config["header_subtitle"]};color:#64748B;font-weight:400;">'
+f'<p style="margin:6px 0 0 0;font-size:0.9rem;color:#64748B;font-weight:400;">'
 f'This platform integrates a <b>pretrained, physically consistent</b> machine learning model with '
 f'<b>multi-objective optimization</b> (NSGA-II) to accelerate cement mix design discovery. '
 f'It rapidly predicts key performance indicators and identifies <b>Pareto-optimal</b> trade-offs among '
@@ -441,24 +449,7 @@ f'</div>'
 f'</div>'
 )
 
-components.html(header_html, height=font_config["header_height"], scrolling=True)
-
-display_label_col, display_radio_col = st.columns([0.18, 0.82], gap="small")
-with display_label_col:
-    st.markdown(
-        f"<div style='font-weight:600; font-size:{font_config['body']}; color:{COLORS['text_head']}; padding-top:0.35rem;'>Font Size</div>",
-        unsafe_allow_html=True,
-    )
-with display_radio_col:
-    st.radio(
-        "Font Size",
-        ["Standard", "Large", "Extra Large"],
-        key="font_size_preset",
-        horizontal=True,
-        label_visibility="collapsed",
-    )
-
-st.markdown("<div style='height: 6px;'></div>", unsafe_allow_html=True)
+components.html(header_html, height=420, scrolling=True)
 
 left_col, right_col = st.columns([0.38, 0.62], gap="large")
 
@@ -470,7 +461,7 @@ with left_col:
             h1, h2 = st.columns([12, 1], gap="small")
             with h1:
                 st.markdown(
-                    f"<span style='color:{COLORS['text_head']}; font-weight:600; font-size:{font_config['panel_title']};'>"
+                    f"<span style='color:{COLORS['text_head']}; font-weight:600; font-size:1.05rem;'>"
                     "Total Mass Constraint (g/100g)</span>",
                     unsafe_allow_html=True
                 )
@@ -483,7 +474,7 @@ with left_col:
                     st.write("So ΣSCMs = 96 − clinker_total (max ΣSCMs = 76 g when clinker = 20 g).")
             
             st.markdown(
-                f"<span style='font-size:{font_config['small']}; color:#64748B;'>"
+                "<span style='font-size:0.8rem; color:#64748B;'>"
                 "Allowed clinker total range: <b>20–96 g</b>. "
                 "Binder is fixed at <b>100 g</b> including <b>4 g gypsum</b>."
                 "</span>",
@@ -496,12 +487,12 @@ with left_col:
             p1, p2 = st.columns([12, 1], gap="small")
             with p1:
                 st.markdown(
-                    f"<span style='color:{COLORS['text_head']}; font-weight:600; font-size:{font_config['panel_title']};'>"
+                    f"<span style='color:{COLORS['text_head']}; font-weight:600; font-size:1.05rem;'>"
                     "Phase Composition (%)</span>",
                     unsafe_allow_html=True
                 )
                 st.markdown(
-                    f"<span style='font-size:{font_config['small']}; color:#64748B;'>"
+                    "<span style='font-size:0.8rem; color:#64748B;'>"
                     "Clinker consists of four mineral phases. Each slider sets an allowable range for that phase. "
                     "Final phase fractions are normalized to sum to 100% within the chosen clinker total."
                     "</span>",
@@ -527,7 +518,7 @@ with left_col:
             top_l, top_r = st.columns([12, 1])
             with top_l:
                 st.markdown(
-                    f"<span style='font-size:{font_config['small']}; color:#64748B;'>"
+                    "<span style='font-size:0.8rem; color:#64748B;'>"
                     "SCMs are defined by their absolute mass (g) and contribute to the total binder."
                     "</span>",
                     unsafe_allow_html=True
@@ -587,12 +578,12 @@ with left_col:
                     st.write("• Target binder = 96 g because 100 g includes 4 g gypsum (fixed).")
 
             st.markdown(f"""
-            <div style='background:{COLORS['bg_app']}; padding:12px; border-radius:8px; border:1px solid {COLORS['border']}; font-size:{font_config['fixed_card']};'>
+            <div style='background:{COLORS['bg_app']}; padding:12px; border-radius:8px; border:1px solid {COLORS['border']}; font-size:0.9rem;'>
                 <div style='display:flex; justify-content:space-between; margin-bottom:4px;'><span>💧 w/c Ratio:</span><b>{FIXED_WC}</b></div>
                 <div style='display:flex; justify-content:space-between; margin-bottom:4px;'><span>⚪ Gypsum:</span><b>{FIXED_GYPSUM}g</b></div>
                 <div style='display:flex; justify-content:space-between; margin-bottom:4px;'><span>🌡️ Temp:</span><b>{FIXED_TEMP}°C</b></div>
                 <div style='display:flex; justify-content:space-between;'><span>🎯 Target Binder:</span><b>{TOTAL_BINDER_TARGET}g</b></div>
-                <div style='margin-top:8px; font-size:{font_config['small']}; color:#64748B;'>
+                <div style='margin-top:8px; font-size:0.8rem; color:#64748B;'>
         These parameters are fixed throughout the optimization and are not subject to variation.</div>
             </div>
             """, unsafe_allow_html=True)

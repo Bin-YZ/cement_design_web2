@@ -6,6 +6,86 @@ import streamlit.components.v1 as components
 from app.paths import get_logo_path
 
 
+DEFAULT_FONT_PRESET = "Standard"
+
+FONT_SCALE_PRESETS = {
+    "Standard": {
+        "body": "16px",
+        "small": "14px",
+        "slider_label": "15px",
+        "tab": "16px",
+        "metric_label": "14px",
+        "metric_value": "24px",
+        "button": "16px",
+        "h1": "2.2rem",
+        "h2": "1.8rem",
+        "h3": "1.4rem",
+        "h4": "1.2rem",
+        "header_title": "1.8rem",
+        "header_version": "0.95rem",
+        "header_subtitle": "0.9rem",
+        "header_meta": "0.82rem",
+        "header_note": "0.78rem",
+        "header_ref": "0.7rem",
+        "panel_title": "1.05rem",
+        "fixed_card": "0.9rem",
+        "header_height": 420,
+    },
+    "Large": {
+        "body": "18px",
+        "small": "16px",
+        "slider_label": "17px",
+        "tab": "18px",
+        "metric_label": "16px",
+        "metric_value": "28px",
+        "button": "18px",
+        "h1": "2.45rem",
+        "h2": "2rem",
+        "h3": "1.55rem",
+        "h4": "1.3rem",
+        "header_title": "2rem",
+        "header_version": "1.05rem",
+        "header_subtitle": "1.02rem",
+        "header_meta": "0.95rem",
+        "header_note": "0.9rem",
+        "header_ref": "0.82rem",
+        "panel_title": "1.15rem",
+        "fixed_card": "1rem",
+        "header_height": 455,
+    },
+    "Extra Large": {
+        "body": "20px",
+        "small": "18px",
+        "slider_label": "19px",
+        "tab": "20px",
+        "metric_label": "18px",
+        "metric_value": "32px",
+        "button": "20px",
+        "h1": "2.65rem",
+        "h2": "2.15rem",
+        "h3": "1.7rem",
+        "h4": "1.45rem",
+        "header_title": "2.2rem",
+        "header_version": "1.12rem",
+        "header_subtitle": "1.08rem",
+        "header_meta": "1.05rem",
+        "header_note": "1rem",
+        "header_ref": "0.9rem",
+        "panel_title": "1.25rem",
+        "fixed_card": "1.08rem",
+        "header_height": 490,
+    },
+}
+
+
+def get_font_scale_config(preset):
+    selected_preset = preset if preset in FONT_SCALE_PRESETS else DEFAULT_FONT_PRESET
+    font_config = FONT_SCALE_PRESETS[selected_preset].copy()
+    font_config["preset"] = selected_preset
+    return font_config
+
+
+@st.cache_data(show_spinner=False)
 def get_base64_img(path):
     if not path.exists():
         return None
@@ -16,15 +96,15 @@ def get_base64_img(path):
         return None
 
 
-def apply_page_style(colors):
-    note_html = """
-<ul style="margin:10px 0 0 18px; padding:0; font-size:0.78rem; color:#334155; line-height:1.45;">
+def apply_page_style(colors, font_config):
+    note_html = f"""
+<ul style="margin:10px 0 0 18px; padding:0; font-size:{font_config['header_note']}; color:#334155; line-height:1.45;">
 <li>
   <b>ANN Model outputs:</b> E-modulus (GPa) + max CO2 uptake (kg/kg). The E-modulus is derived by applying
   <b>micromechanical homogenization</b> to the <b>GEMS-simulated hydrate assemblages</b>.
   <details style="display:inline; cursor:pointer; color:#0F766E;">
-    <summary style="list-style:none; display:inline; font-size:0.7rem; text-decoration:underline;">[Ref]</summary>
-    <div style="font-size:0.7rem; color:#64748B; background:#F8FAFC; padding:10px; border-left:2px solid #0F766E; margin-top:5px; line-height:1.3;">
+    <summary style="list-style:none; display:inline; font-size:{font_config['header_ref']}; text-decoration:underline;">[Ref]</summary>
+    <div style="font-size:{font_config['header_ref']}; color:#64748B; background:#F8FAFC; padding:10px; border-left:2px solid #0F766E; margin-top:5px; line-height:1.3;">
       <b>Citations:</b><br>
       1. Kulik D.A., et al. (2013): GEM-Selektor geochemical modeling package. Comput. Geosci. 17, 1-24.<br>
       2. Wagner T., et al. (2012): GEM-Selektor package: TSolMod library. Can. Mineral. 50, 1173-1195.<br>
@@ -58,6 +138,20 @@ def apply_page_style(colors):
         <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
 
+        :root {{
+            --font-body: {font_config['body']};
+            --font-small: {font_config['small']};
+            --font-slider-label: {font_config['slider_label']};
+            --font-tab: {font_config['tab']};
+            --font-metric-label: {font_config['metric_label']};
+            --font-metric-value: {font_config['metric_value']};
+            --font-button: {font_config['button']};
+            --font-h1: {font_config['h1']};
+            --font-h2: {font_config['h2']};
+            --font-h3: {font_config['h3']};
+            --font-h4: {font_config['h4']};
+        }}
+
         html, body, [class*="css"] {{
             font-family: 'Inter', sans-serif;
             background-color: {colors['bg_app']} !important;
@@ -65,14 +159,26 @@ def apply_page_style(colors):
         }}
 
         p, .stMarkdown, .stText, label, .stSelectbox, .stNumberInput, div[data-baseweb="select"] {{
-            font-size: 16px !important;
+            font-size: var(--font-body) !important;
             line-height: 1.5 !important;
         }}
 
-        h1 {{ font-size: 2.2rem !important; font-weight: 800 !important; }}
-        h2 {{ font-size: 1.8rem !important; font-weight: 700 !important; }}
-        h3 {{ font-size: 1.4rem !important; font-weight: 700 !important; }}
-        h4, h5 {{ font-size: 1.2rem !important; font-weight: 600 !important; }}
+        div[data-testid="stMarkdownContainer"] li,
+        div[data-testid="stMarkdownContainer"] p,
+        div[data-testid="stCaptionContainer"] p,
+        div[data-testid="stRadio"] p,
+        div[data-testid="stCheckbox"] label p {{
+            font-size: var(--font-body) !important;
+        }}
+
+        small, .stCaption {{
+            font-size: var(--font-small) !important;
+        }}
+
+        h1 {{ font-size: var(--font-h1) !important; font-weight: 800 !important; }}
+        h2 {{ font-size: var(--font-h2) !important; font-weight: 700 !important; }}
+        h3 {{ font-size: var(--font-h3) !important; font-weight: 700 !important; }}
+        h4, h5 {{ font-size: var(--font-h4) !important; font-weight: 600 !important; }}
 
         .css-card {{
             background-color: {colors['bg_card']};
@@ -84,7 +190,7 @@ def apply_page_style(colors):
         }}
 
         .stButton > button {{
-            font-size: 16px !important;
+            font-size: var(--font-button) !important;
             padding: 0.6rem 1.2rem !important;
             font-weight: 600 !important;
             background: {colors['primary']} !important;
@@ -98,9 +204,11 @@ def apply_page_style(colors):
             transform: translateY(-1px);
         }}
 
-        div.stSlider {{ padding-top: 10px; }}
+        div.stSlider {{
+            padding-top: 10px;
+        }}
         div.stSlider div[data-testid="stMarkdownContainer"] p {{
-            font-size: 15px !important;
+            font-size: var(--font-slider-label) !important;
             color: {colors['text_sub']} !important;
             font-weight: 600 !important;
         }}
@@ -119,7 +227,7 @@ def apply_page_style(colors):
         }}
 
         .stTabs [data-baseweb="tab"] {{
-            font-size: 16px !important;
+            font-size: var(--font-tab) !important;
             padding: 10px 24px !important;
             color: {colors['text_sub']};
         }}
@@ -128,8 +236,20 @@ def apply_page_style(colors):
             border-bottom-color: {colors['primary']} !important;
         }}
 
-        div[data-testid="stMetricLabel"] {{ font-size: 14px !important; color: {colors['text_sub']}; }}
-        div[data-testid="stMetricValue"] {{ font-size: 24px !important; font-weight: 700 !important; color: {colors['text_head']}; }}
+        div[data-testid="stMetricLabel"] {{
+            font-size: var(--font-metric-label) !important;
+            color: {colors['text_sub']};
+        }}
+        div[data-testid="stMetricValue"] {{
+            font-size: var(--font-metric-value) !important;
+            font-weight: 700 !important;
+            color: {colors['text_head']};
+        }}
+
+        div[data-testid="stDataFrame"] [role="columnheader"],
+        div[data-testid="stDataFrame"] [role="gridcell"] {{
+            font-size: var(--font-body) !important;
+        }}
         </style>
         """,
         unsafe_allow_html=True,
@@ -140,7 +260,7 @@ def apply_page_style(colors):
 
     meta_html = (
         '<div style="margin-top:12px;padding-top:12px;border-top:1px solid #E2E8F0;'
-        'color:#334155;font-size:0.82rem;line-height:1.35;">'
+        f'color:#334155;font-size:{font_config["header_meta"]};line-height:1.35;">'
         '<div style="margin-bottom:8px;"><b>Developed by:</b> '
         '<a href="https://www.psi.ch/en/les" target="_blank" '
         'style="color:#0F172A;font-weight:700;text-decoration:none;">PSI - LES Team</a> '
@@ -173,10 +293,10 @@ def apply_page_style(colors):
         f"{meta_html}"
         f"</div>"
         f'<div style="flex:1;border-left:2px solid #E2E8F0;padding-left:20px;">'
-        f'<h1 style="margin:0;font-size:1.8rem;color:#0F172A;">'
-        f'Cement Mix Optimizer <span style="font-size:0.95rem; font-weight:700; color:#64748B;">v0.1.2026</span>'
+        f'<h1 style="margin:0;font-size:{font_config["header_title"]};color:#0F172A;">'
+        f'Cement Mix Optimizer <span style="font-size:{font_config["header_version"]}; font-weight:700; color:#64748B;">v0.1.2026</span>'
         f"</h1>"
-        f'<p style="margin:6px 0 0 0;font-size:0.9rem;color:#64748B;font-weight:400;">'
+        f'<p style="margin:6px 0 0 0;font-size:{font_config["header_subtitle"]};color:#64748B;font-weight:400;">'
         f'This platform integrates a <b>pretrained, physically consistent</b> machine learning model with '
         f'<b>multi-objective optimization</b> (NSGA-II) to accelerate cement mix design discovery. '
         f'It rapidly predicts key performance indicators and identifies <b>Pareto-optimal</b> trade-offs among '
@@ -188,7 +308,7 @@ def apply_page_style(colors):
         f"</div>"
     )
 
-    components.html(header_html, height=420, scrolling=True)
+    components.html(header_html, height=font_config["header_height"], scrolling=True)
 
 
 def init_session_state():
@@ -207,6 +327,7 @@ def init_session_state():
     st.session_state.setdefault("obj_net_min", False)
     st.session_state.setdefault("obj_cost_min", False)
     st.session_state.setdefault("obj_co2abs_max", False)
+    st.session_state.setdefault("font_size_preset", DEFAULT_FONT_PRESET)
 
 
 def set_time(val):
