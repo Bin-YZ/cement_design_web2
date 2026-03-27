@@ -4,7 +4,7 @@ import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
 import plotly.express as px
-from pdf_generator import create_pdf_report
+from app.pdf_report import create_pdf_report
 
 
 # ==========================================================
@@ -91,7 +91,7 @@ def prepare_display_pipeline(
     df_pareto: pd.DataFrame,
     df_all: pd.DataFrame | None,
     obj_sig: tuple,
-    history_sample_cap: int = 25000,
+    history_sample_cap: int = 10000,
 ) -> tuple[pd.DataFrame, pd.DataFrame | None, tuple]:
     """
     Returns:
@@ -166,7 +166,7 @@ def build_pareto_figure(
 
     # --- history (explored): use Scattergl for speed in 2D ---
     if show_all and df_all_display is not None and len(df_all_display) > 0:
-        customdata_exp = np.array([f"exp_{i}" for i in range(len(df_all_display))], dtype=object)
+        customdata_exp = np.char.add("exp_", np.arange(len(df_all_display)).astype(str))
 
         if use_3d and z_axis:
             fig.add_trace(
@@ -197,7 +197,7 @@ def build_pareto_figure(
             )
 
     # --- pareto: keep hover light ---
-    customdata_par = np.array([f"par_{i}" for i in range(len(df_display))], dtype=object)
+    customdata_par = np.char.add("par_", np.arange(len(df_display)).astype(str))
     colorbar_title = "Decision Score<br>(TOPSIS)" if color_col == "Decision_Score" else color_col
 
     if use_3d and z_axis:
@@ -645,7 +645,7 @@ def show_results(COLORS, MATERIALS_CONFIG):
                         f"""
                         <div style="border: 2px dashed {COLORS['border']}; border-radius: 12px; padding: 60px 20px; text-align: center; color: {COLORS['text_sub']}; margin-top: 20px;">
                             <h1 style="font-size: 3rem; margin-bottom: 10px; color:{COLORS['primary']};">🖱️</h1>
-                            <p style="font-size: 1rem; margin: 0;"><b>Click any point</b> on the plot (colored or grey) to reveal its exact recipe.</p>
+                            <p style="font-size: 1rem; margin: 0;"><b>Click colored point</b> on the plot to reveal its exact recipe.</p>
                         </div>
                         """,
                         unsafe_allow_html=True,

@@ -1,24 +1,33 @@
 # main.py
-import streamlit as st
-import os
-import warnings
 import logging
-import numpy as np
-import pandas as pd
-import sys
+import os
 import traceback
-import tempfile
+import warnings
 from pathlib import Path
 import base64
 
+import numpy as np
+import streamlit as st
+
 # ✅ 1. 导入我们刚刚拆分出去的仪表盘模块
-from dashboard import show_results
+from app.core import ConcreteMixProblem, MetricsCalculator, ModelWrapper
+from app.dashboard import show_results
+from app.paths import get_logo_path, get_model_path
+from app.ui_helpers import (
+    apply_page_style,
+    init_session_state,
+    range_slider_with_inputs,
+    reset_run_results,
+    set_time,
+    slider_with_input,
+)
 
 # 1. 统一获取基础目录（脚本所在的文件夹）
-BASE_DIR = Path(__file__).resolve().parent
 
 # 2. 定义图片路径，逻辑与 model_path 完全一致
-logo_path = BASE_DIR / "psi_logo.png"
+
+logo_path = get_logo_path()
+
 
 def get_base64_img(path):
     # 检查图片是否存在，逻辑与 if not os.path.exists(model_path) 一致
@@ -48,15 +57,6 @@ from pymoo.operators.mutation.pm import PM
 from pymoo.operators.sampling.rnd import FloatRandomSampling
 from pymoo.termination import get_termination
 from pymoo.optimize import minimize
-
-# Custom modules check
-try:
-    from model_wrapper import ModelWrapper
-    from metrics import MetricsCalculator
-    from nsga_problem import ConcreteMixProblem
-except ImportError as e:
-    st.error(f"Missing required modules: {e}. Please ensure model_wrapper.py, metrics.py, etc. are in the directory.")
-    st.stop()
 
 # --- Page Configuration ---
 st.set_page_config(
@@ -226,7 +226,6 @@ st.markdown(f"""
         box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
         display: flex; justify-content: space-between; align-items: center;
     }}
-
     </style>
 """, unsafe_allow_html=True)
 
@@ -234,8 +233,7 @@ st.markdown(f"""
 # --- Resource Caching ---
 @st.cache_resource
 def load_model_and_metrics():
-    BASE_DIR = Path(__file__).resolve().parent
-    model_path = BASE_DIR / "my_model16082025.h5"
+    model_path = get_model_path()
     if not os.path.exists(model_path):
         return None, None
     model = ModelWrapper(model_path)
@@ -392,7 +390,6 @@ def range_slider_with_inputs(label, min_val, max_val, default_range, step, key_b
     
     lo, hi = ss[master_key]
     return float(lo), float(hi)
-
 
 # ==========================================
 #                PAGE LAYOUT
@@ -590,6 +587,7 @@ with left_col:
         These parameters are fixed throughout the optimization and are not subject to variation.</div>
             </div>
             """, unsafe_allow_html=True)
+    
 
 with right_col:
     with st.container():
@@ -688,7 +686,6 @@ with right_col:
                 st.markdown("</div>", unsafe_allow_html=True)
 
             objectives_list = [k for k, v in [("E_max", obj_e_max), ("CO2abs_max", obj_co2abs_max), ("CO2_min", obj_co2_min), ("Cost_min", obj_cost_min), ("Net_min", obj_net_min)] if v]
-
 
     st.markdown(" ")
     
