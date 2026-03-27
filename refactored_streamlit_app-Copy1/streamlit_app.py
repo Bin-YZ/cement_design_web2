@@ -695,7 +695,6 @@ with right_col:
                 st.markdown("</div>", unsafe_allow_html=True)
 
             objectives_list = [k for k, v in [("E_max", obj_e_max), ("CO2abs_max", obj_co2abs_max), ("CO2_min", obj_co2_min), ("Cost_min", obj_cost_min), ("Net_min", obj_net_min)] if v]
-
     st.markdown(" ")
     
     with st.container():
